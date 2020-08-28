@@ -21,8 +21,7 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import Character.TLCharacter;
-import Character.Deck;
+import Character.TimeLostChar;
 import Character.Stat;
 
 public class TimeLost {
@@ -93,34 +92,25 @@ public class TimeLost {
     Attack.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        statChooser = new JFrame("Choose Stat");
-        statChooser.setContentPane(new StatChooser(TimeLost.this).rootPanel);
-        statChooser.pack();
-        statChooser.setVisible(true);
-        //calculateAttack((String)SelectedStat.getSelectedItem());
+        openStatChooser();
       }
     });
     Defend.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        calculateDefense();
+        defend();
       }
     });
     Counter.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        calculateCounter();
+        counter();
       }
     });
     Draw.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        draw = new JFrame("Choose Max Value");
-        draw.setContentPane(new Draw(TimeLost.this).rootPanel);
-        draw.pack();
-        draw.setVisible(true);
-        //int outcome = Deck.Draw((int)DrawValue.getValue(), 1);
-        //BattleOutcome.setText("Outcome: " + outcome + "\n");
+        openDrawMenu();
       }
     });
     loadButton.addActionListener(new ActionListener() {
@@ -131,25 +121,49 @@ public class TimeLost {
     });
   }
 
-  private void calculateDraw(ButtonGroup group, Stat stat, int max) {
-    int XPBoost = getSelectedButton(group);
-    int lvl;
-    if ((int)CharacterLVL.getValue() < 1) { lvl = 1; } else { lvl = (int)CharacterLVL.getValue(); }
-    int outcome = Deck.Draw(max, lvl) + XPBoost;
-    BattleOutcome.setText("Stat: " + stat + "\nBoost limit: " + lvl + "\nXPBoost: " + XPBoost + "\nOutcome: " + outcome + "\n");
+  public static void main(String[] args) {
+    JFrame frame = new JFrame("TimeLost");
+    TimeLost tl = new TimeLost();
+    frame.setContentPane(tl.rootPanel);
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.pack();
+    frame.setVisible(true);
   }
 
-  private void calculateCounter() {
-    calculateDraw(BodyGroup, Stat.BODY, Deck.SMALLMAX);
+  private void openDrawMenu() {
+    draw = new JFrame("Choose Max Value");
+    draw.setContentPane(new Draw(TimeLost.this).rootPanel);
+    draw.pack();
+    draw.setVisible(true);
   }
 
-  private void calculateDefense() {
-    calculateDraw(MindGroup, Stat.MIND, Deck.SMALLMAX);
+  private void openStatChooser() {
+    statChooser = new JFrame("Choose Stat");
+    statChooser.setContentPane(new StatChooser(TimeLost.this).rootPanel);
+    statChooser.pack();
+    statChooser.setVisible(true);
   }
 
-  public void calculateAttack(String s) {
+  public void closeStatChooser() {
+    statChooser.setVisible(false);
+  }
+
+  private void counter() {
+    returnOutcome(BodyGroup, Stat.BODY, TimeLostChar.SMALLDECK);
+  }
+
+  private void defend() {
+    returnOutcome(MindGroup, Stat.MIND, TimeLostChar.SMALLDECK);
+  }
+
+  public void attack(String s) {
     ButtonGroup group;
     Stat stat;
+
+    // Determine which stat we care about
+    // (currently based on the selection made in StatChooser window)
+    // am aware this is non-ideal hardcoding,
+    // but it would unnecessarily complicate something that is fairly invariable
     switch (s) {
       case "Body":
         group = BodyGroup;
@@ -168,19 +182,13 @@ public class TimeLost {
         stat = Stat.ESSENCE;
         break;
     }
-    calculateDraw(group, stat, Deck.BIGMAX);
-    statChooser.setVisible(false);
+    returnOutcome(group, stat, TimeLostChar.BIGDECK);
   }
 
-  public static void main(String[] args) {
-    JFrame frame = new JFrame("TimeLost");
-    TimeLost tl = new TimeLost();
-    frame.setContentPane(tl.rootPanel);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.pack();
-    frame.setVisible(true);
+  private void returnOutcome(ButtonGroup group, Stat stat, int bigdeck) {
+    BattleOutcome.setText("Stat: " + stat + "\n" + TimeLostChar
+        .action((int) CharacterLVL.getValue(), getSelectedButton(group), bigdeck));
   }
-
 
   private void save() {
     // configure jfc
@@ -196,7 +204,7 @@ public class TimeLost {
       }
       try {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        TLCharacter toSave = buildCharacterFromGUI();
+        TimeLostChar toSave = buildCharacterFromGUI();
         String str = gson.toJson(toSave);
         FileWriter writer = new FileWriter(file);
         writer.write(str);
@@ -225,7 +233,7 @@ public class TimeLost {
 
         // convert string into the class
         Gson gson = new Gson();
-        TLCharacter loaded = gson.fromJson(stringBuilder.toString(), TLCharacter.class);
+        TimeLostChar loaded = gson.fromJson(stringBuilder.toString(), TimeLostChar.class);
         buildGUIFromCharacter(loaded);
       } catch (Exception e) {
         e.printStackTrace();
@@ -233,8 +241,8 @@ public class TimeLost {
     }
   }
 
-  private TLCharacter buildCharacterFromGUI() {
-    TLCharacter output = new TLCharacter();
+  private TimeLostChar buildCharacterFromGUI() {
+    TimeLostChar output = new TimeLostChar();
 
     String name;
     try {
@@ -264,17 +272,29 @@ public class TimeLost {
     }
   }
 
-  private void buildGUIFromCharacter(TLCharacter character) {
+  private void buildGUIFromCharacter(TimeLostChar character) {
     CharacterName.setText(character.getName());
     CharacterLVL.setValue(character.getLVL());
     CharacterHP.setValue(character.getHealth());
     CharacterMaxHP.setValue(character.getMaxHealth());
     CharacterFocus.setValue(character.getFocus());
     CharacterMaxFocus.setValue(character.getMaxFocus());
-    setStatRadioButton(BodyGroup, character.getBody(), new JRadioButton[]{Body1, Body2, Body3, Body4 });
-    setStatRadioButton(MindGroup, character.getMind(), new JRadioButton[]{Mind1, Mind2, Mind3, Mind4 });
-    setStatRadioButton(SoulGroup, character.getSoul(), new JRadioButton[]{Soul1, Soul2, Soul3, Soul4 });
-    setStatRadioButton(EssenceGroup, character.getEssence(), new JRadioButton[]{Essence1, Essence2, Essence3, Essence4 });
+    setStatRadioButton(
+        BodyGroup,
+        character.getBody(),
+        new JRadioButton[]{Body1, Body2, Body3, Body4 });
+    setStatRadioButton(
+        MindGroup,
+        character.getMind(),
+        new JRadioButton[]{Mind1, Mind2, Mind3, Mind4 });
+    setStatRadioButton(
+        SoulGroup,
+        character.getSoul(),
+        new JRadioButton[]{Soul1, Soul2, Soul3, Soul4 });
+    setStatRadioButton(
+        EssenceGroup,
+        character.getEssence(),
+        new JRadioButton[]{Essence1, Essence2, Essence3, Essence4 });
   }
 
   private void setStatRadioButton(ButtonGroup group, int index, JRadioButton[] buttons) {

@@ -8,7 +8,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import Character.Stat;
 
 public class StatChooser {
 
@@ -26,8 +25,8 @@ public class StatChooser {
     commitButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        tl.calculateAttack(getStat());
-        StatChooser.this.rootPanel.setVisible(false);
+        tl.attack(getStat());
+        tl.closeStatChooser();
       }
     });
   }
