@@ -1,0 +1,12 @@
+{
+  "name": "sryhx2",
+  "health": 10,
+  "maxHealth": 1240,
+  "LVL": 3,
+  "focus": 1240,
+  "maxFocus": 40,
+  "body": 3,
+  "mind": 2,
+  "soul": 3,
+  "essence": 2
+}
