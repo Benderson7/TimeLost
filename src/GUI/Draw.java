@@ -7,7 +7,6 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
-import Character.Deck;
 import Character.Stat;
 
 public class Draw {
@@ -23,10 +22,9 @@ public class Draw {
     drawButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        int outcome = Deck.Draw((int)value.getValue(), 1);
-        Stat[] stats = new Stat[] {Stat.BODY, Stat.MIND, Stat.SOUL, Stat.ESSENCE };
+        Stat[] stats = new Stat[] {Stat.BODY, Stat.MIND, Stat.SOUL, Stat.ESSENCE};
         Stat stat = stats[new Random().nextInt(4)];
-        timelost.BattleOutcome.setText("Outcome: " + outcome + " " + stat.toString() + "\n");
+        timelost.BattleOutcome.setText("Stat: " + stat.toString() + "\nResult: " + (new Random().nextInt((int)value.getValue()) + 1));
       }
     });
   }
