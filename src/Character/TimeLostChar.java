@@ -17,6 +17,7 @@ public class TimeLostChar {
   private int mind;
   private int soul;
   private int essence;
+  private TimeLostItem[] inventory;
 
   public String getName() { return name; }
   public void setName(String text) {
@@ -73,6 +74,9 @@ public class TimeLostChar {
   public void setEssence(int selectedButton) {
     essence = selectedButton;
   }
+
+  public TimeLostItem[] getInventory() { return inventory; }
+  public void setInventory(TimeLostItem[] inventory) { this.inventory = inventory; }
 
   public static String action(int boostLimit, int xp, int maxValue) {
     // result of the first draw
