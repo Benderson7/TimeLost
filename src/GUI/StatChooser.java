@@ -1,44 +1,32 @@
 package GUI;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Enumeration;
-import javax.swing.AbstractButton;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 
 public class StatChooser {
 
-  private JRadioButton bodyRadioButton;
-  private JRadioButton mindRadioButton;
-  private JRadioButton soulRadioButton;
-  private JRadioButton essenceRadioButton;
-  private JButton commitButton;
   public JPanel rootPanel;
-  private ButtonGroup StatsGroup;
+  private JButton bodyButton;
+  private JButton soulButton;
+  private JButton mindButton;
+  private JButton essenceButton;
 
   public StatChooser(TimeLost timelost) {
-    TimeLost tl = timelost;
-
-    commitButton.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        tl.attack(getStat());
-        tl.closeStatChooser();
-      }
+    bodyButton.addActionListener(e -> {
+      timelost.attack("Body");
+      timelost.closeStatChooser();
     });
-  }
-
-  private String getStat() {
-    Enumeration<AbstractButton> buttons = StatsGroup.getElements();
-    for (int i = 0; i < 4; i++) {
-      AbstractButton current = buttons.nextElement();
-      if (current.isSelected()) {
-        return current.getText();
-        }
-      }
-    return null;
+    mindButton.addActionListener(e -> {
+      timelost.attack("Mind");
+      timelost.closeStatChooser();
+    });
+    soulButton.addActionListener(e -> {
+      timelost.attack("Soul");
+      timelost.closeStatChooser();
+    });
+    essenceButton.addActionListener(e -> {
+      timelost.attack("Essence");
+      timelost.closeStatChooser();
+    });
   }
 }

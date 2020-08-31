@@ -2,12 +2,13 @@ package GUI;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Scanner;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
@@ -17,12 +18,20 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import Character.TimeLostChar;
+import Character.TimeLostItem;
 import Character.Stat;
+import javax.swing.table.DefaultTableModel;
 
 public class TimeLost {
 
@@ -67,13 +76,20 @@ public class TimeLost {
   private JButton Draw;
   private JButton Counter;
   private JPanel Stats;
-  private JPanel AttackPanel;
   private JButton Save;
   public JTextPane BattleOutcome;
-  private JPanel NotAttackPanel;
   private JPanel SavePanel;
   private JButton loadButton;
-  private JSpinner DrawValue;
+  private JButton SaveAs;
+  private JButton New;
+  private JTabbedPane tabbedPane1;
+  private JPanel CharacterPane;
+  private JPanel InventoryPane;
+  private JButton AddRow;
+  private JPanel TableButtonPanel;
+  private JTable InventoryTable;
+  private JScrollPane TablePane;
+  private JPanel ActionsPanel;
   private ButtonGroup EssenceGroup;
   private ButtonGroup SoulGroup;
   private ButtonGroup MindGroup;
@@ -81,59 +97,120 @@ public class TimeLost {
 
   private JFrame statChooser;
   private JFrame draw;
+  private DefaultTableModel inventoryTableModel;
+
+  private static JFrame mainFrame;
+  private File currentFile;
+  private static String defaultName = "unnamed_character";
+  private static int defaultTableSize = 14;
 
   public TimeLost() {
-    Save.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        save();
-      }
-    });
-    Attack.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        openStatChooser();
-      }
-    });
-    Defend.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        defend();
-      }
-    });
-    Counter.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        counter();
-      }
-    });
-    Draw.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        openDrawMenu();
-      }
-    });
-    loadButton.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        load();
-      }
-    });
+    addListeners();
+    setupInventory();
+  }
+
+  private void setupInventory() {
+    inventoryTableModel = new DefaultTableModel();
+    inventoryTableModel.addColumn("Name");
+    inventoryTableModel.addColumn("Description");
+    inventoryTableModel.addColumn("Stat");
+    inventoryTableModel.addColumn("Modifier");
+    InventoryTable.getTableHeader().setReorderingAllowed(false);
+    inventoryTableModel.setRowCount(defaultTableSize);
+    InventoryTable.setModel(inventoryTableModel);
   }
 
   public static void main(String[] args) {
-    JFrame frame = new JFrame("TimeLost");
+    mainFrame = new JFrame(defaultName);
     TimeLost tl = new TimeLost();
-    frame.setContentPane(tl.rootPanel);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.pack();
-    frame.setVisible(true);
+    mainFrame.setContentPane(tl.rootPanel);
+    mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    mainFrame.pack();
+    mainFrame.setResizable(false);
+    mainFrame.setLocationRelativeTo(null);
+    mainFrame.setVisible(true);
+  }
+
+  private void addListeners() {
+
+    // these listeners literally just see if something in the GUI has changed, to add the * to the
+    // frame title. If I know how to make this less abysmal i would
+    ChangeListener changeListener = e -> mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
+    ActionListener actionListener = e -> mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
+    DocumentListener docChangeListener = new DocumentListener() {
+      @Override
+      public void insertUpdate(DocumentEvent e) {
+        mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
+      }
+
+      @Override
+      public void removeUpdate(DocumentEvent e) {
+        mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
+      }
+
+      @Override
+      public void changedUpdate(DocumentEvent e) {
+        mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
+      }
+    };
+    CharacterName.getDocument().addDocumentListener(docChangeListener);
+    CharacterHP.addChangeListener(changeListener);
+    CharacterMaxHP.addChangeListener(changeListener);
+    CharacterLVL.addChangeListener(changeListener);
+    CharacterFocus.addChangeListener(changeListener);
+    CharacterMaxFocus.addChangeListener(changeListener);
+    Body1.addActionListener(actionListener);
+    Body2.addActionListener(actionListener);
+    Body3.addActionListener(actionListener);
+    Body4.addActionListener(actionListener);
+    Mind1.addActionListener(actionListener);
+    Mind2.addActionListener(actionListener);
+    Mind3.addActionListener(actionListener);
+    Mind4.addActionListener(actionListener);
+    Soul1.addActionListener(actionListener);
+    Soul2.addActionListener(actionListener);
+    Soul3.addActionListener(actionListener);
+    Soul4.addActionListener(actionListener);
+    Essence1.addActionListener(actionListener);
+    Essence2.addActionListener(actionListener);
+    Essence3.addActionListener(actionListener);
+    Essence4.addActionListener(actionListener);
+
+    // actual functional listeners
+    Attack.addActionListener(e -> openStatChooser());
+    Defend.addActionListener(e -> defend());
+    Counter.addActionListener(e -> counter());
+    Draw.addActionListener(e -> openDrawMenu());
+    New.addActionListener(e -> newChar());
+    Save.addActionListener(e -> {
+      if (currentFile != null) {
+        save(currentFile);
+      } else {
+        saveNew();
+      }
+    });
+    SaveAs.addActionListener(e -> {
+      saveNew();
+    });
+    loadButton.addActionListener(e -> load());
+
+    AddRow.addActionListener(e -> inventoryTableModel.setRowCount(inventoryTableModel.getRowCount() + 1));
+  }
+
+  private String appendAsterisks(String s) {
+    if (!s.endsWith("*")) {
+      return s.concat("*");
+    }
+    return s;
   }
 
   private void openDrawMenu() {
     draw = new JFrame("Choose Max Value");
     draw.setContentPane(new Draw(TimeLost.this).rootPanel);
     draw.pack();
+    draw.setResizable(false);
+    draw.setLocationRelativeTo(rootPanel);
+    draw.setLocation(draw.getX(), draw.getY() + Math.round(draw.getHeight() / 2) + Math.round(rootPanel.getHeight() / 2));
     draw.setVisible(true);
   }
 
@@ -141,6 +218,8 @@ public class TimeLost {
     statChooser = new JFrame("Choose Stat");
     statChooser.setContentPane(new StatChooser(TimeLost.this).rootPanel);
     statChooser.pack();
+    statChooser.setResizable(false);
+    statChooser.setLocationRelativeTo(rootPanel);
     statChooser.setVisible(true);
   }
 
@@ -190,11 +269,19 @@ public class TimeLost {
         .action((int) CharacterLVL.getValue(), getSelectedButton(group), bigdeck));
   }
 
-  private void save() {
+  private void saveNew() {
     // configure jfc
     JFileChooser jfc = new JFileChooser();
     jfc.setFileFilter(new FileNameExtensionFilter("JSON Files", "json"));
     jfc.setCurrentDirectory(new File(Paths.get("").toAbsolutePath().toString()));
+    File selectedFile;
+    if (currentFile != null) {
+      selectedFile = currentFile;
+    }
+    else {
+      selectedFile = new File(defaultName + ".json");
+    }
+    jfc.setSelectedFile(selectedFile);
 
     if (jfc.showSaveDialog(rootPanel) == JFileChooser.APPROVE_OPTION) {
       File file = jfc.getSelectedFile();
@@ -202,16 +289,25 @@ public class TimeLost {
       if (!file.getName().endsWith(".json")) {
         file = new File(file + ".json");
       }
-      try {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        TimeLostChar toSave = buildCharacterFromGUI();
-        String str = gson.toJson(toSave);
-        FileWriter writer = new FileWriter(file);
-        writer.write(str);
-        writer.close();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      save(file);
+    }
+  }
+
+  private void save(File file) {
+    try {
+      Gson gson = new GsonBuilder().setPrettyPrinting().create();
+      TimeLostChar toSave = buildCharacterFromGUI();
+      String str = gson.toJson(toSave);
+      FileWriter writer = new FileWriter(file);
+      writer.write(str);
+      writer.close();
+
+      // reset frame title and set current file to the one we just saved
+      mainFrame.setTitle(file.getName().substring(0, file.getName().length() - 5));
+      currentFile = file;
+
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
@@ -235,10 +331,43 @@ public class TimeLost {
         Gson gson = new Gson();
         TimeLostChar loaded = gson.fromJson(stringBuilder.toString(), TimeLostChar.class);
         buildGUIFromCharacter(loaded);
+
+        // reset title and set current file
+        mainFrame.setTitle(file.getName().substring(0, file.getName().length() - 5));
+        currentFile = file;
       } catch (Exception e) {
         e.printStackTrace();
       }
     }
+  }
+
+  private void newChar() {
+    CharacterName.setText("");
+    CharacterLVL.setValue(0);
+    CharacterHP.setValue(0);
+    CharacterMaxHP.setValue(0);
+    CharacterFocus.setValue(0);
+    CharacterMaxFocus.setValue(0);
+    setStatRadioButton(
+        BodyGroup,
+        0,
+        new JRadioButton[]{Body1, Body2, Body3, Body4 });
+    setStatRadioButton(
+        MindGroup,
+        0,
+        new JRadioButton[]{Mind1, Mind2, Mind3, Mind4 });
+    setStatRadioButton(
+        SoulGroup,
+        0,
+        new JRadioButton[]{Soul1, Soul2, Soul3, Soul4 });
+    setStatRadioButton(
+        EssenceGroup,
+        0,
+        new JRadioButton[]{Essence1, Essence2, Essence3, Essence4 });
+    fillInventoryTable(new TimeLostItem[0]);
+
+    mainFrame.setTitle(defaultName);
+    currentFile = null;
   }
 
   private TimeLostChar buildCharacterFromGUI() {
@@ -260,8 +389,44 @@ public class TimeLost {
     output.setMind(getSelectedButton(MindGroup));
     output.setSoul(getSelectedButton(SoulGroup));
     output.setEssence(getSelectedButton(EssenceGroup));
+    output.setInventory(convertInventoryToItemArray());
 
     return output;
+  }
+
+  private TimeLostItem[] convertInventoryToItemArray() {
+    ArrayList<TimeLostItem> output = new ArrayList<>();
+
+    //TODO: optimize this so that the table stores what rows have been edited, and only loops through those rows
+    // Will have to ensure that when loading a character, that it stores which rows it filled in, too
+    for (int row = 0; row < inventoryTableModel.getRowCount(); row++) {
+      TimeLostItem currentItem = new TimeLostItem();
+      for (int col = 0; col < inventoryTableModel.getColumnCount(); col++) {
+        String property = (String)inventoryTableModel.getValueAt(row, col);
+        switch (col) {
+          case 0:
+            currentItem.setName(property);
+            break;
+          case 1:
+            currentItem.setDescription(property);
+            break;
+          case 2:
+            currentItem.setStat(property);
+            break;
+          default:
+            currentItem.setModifier(property);
+            break;
+        }
+      }
+      if (!(currentItem.getName().isEmpty()
+          && currentItem.getDescription().isEmpty()
+          && currentItem.getStat().isEmpty()
+          && currentItem.getModifier().isEmpty())) {
+        output.add(currentItem);
+      }
+    }
+
+    return output.toArray(new TimeLostItem[0]);
   }
 
   private int parseSpinner(JSpinner spinner) {
@@ -295,6 +460,28 @@ public class TimeLost {
         EssenceGroup,
         character.getEssence(),
         new JRadioButton[]{Essence1, Essence2, Essence3, Essence4 });
+    fillInventoryTable(character.getInventory());
+  }
+
+  private void fillInventoryTable(TimeLostItem[] input) {
+    TimeLostItem[] inventory;
+    if (input == null)
+      inventory = new TimeLostItem[0];
+    else
+      inventory = input;
+
+    inventoryTableModel.setRowCount(0); // clearing old data
+    inventoryTableModel.setRowCount(Math.max(inventory.length, defaultTableSize));
+
+    int rowIndex = 1;
+    for (TimeLostItem item : inventory) {
+      // column indices are non-changeable, so we can assume their positions here
+      InventoryTable.setValueAt(item.getName(), rowIndex, 0);
+      InventoryTable.setValueAt(item.getDescription(), rowIndex, 1);
+      InventoryTable.setValueAt(item.getStat(), rowIndex, 2);
+      InventoryTable.setValueAt(item.getModifier(), rowIndex, 3);
+      rowIndex++;
+    }
   }
 
   private void setStatRadioButton(ButtonGroup group, int index, JRadioButton[] buttons) {

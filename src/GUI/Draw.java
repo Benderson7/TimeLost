@@ -12,7 +12,6 @@ import Character.Stat;
 public class Draw {
 
   private JSpinner value;
-  private JLabel Instructions;
   private JButton drawButton;
   public JPanel rootPanel;
 
@@ -24,7 +23,7 @@ public class Draw {
       public void actionPerformed(ActionEvent e) {
         Stat[] stats = new Stat[] {Stat.BODY, Stat.MIND, Stat.SOUL, Stat.ESSENCE};
         Stat stat = stats[new Random().nextInt(4)];
-        timelost.BattleOutcome.setText("Stat: " + stat.toString() + "\nResult: " + (new Random().nextInt((int)value.getValue()) + 1));
+        timelost.BattleOutcome.setText("Stat: " + stat.toString() + "\nResult: " + (new Random().nextInt(Math.max((int)value.getValue(), 1)) + 1));
       }
     });
   }
