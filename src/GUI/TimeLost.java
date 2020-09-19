@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
@@ -33,6 +34,7 @@ import Character.TimeLostItem;
 import Character.Stat;
 import javax.swing.table.DefaultTableModel;
 
+// Represents the GUI supporting character editing, saving, and loading, based on the rules of the card game TimeLost
 public class TimeLost {
 
   private JPanel rootPanel;
@@ -104,11 +106,15 @@ public class TimeLost {
   private static String defaultName = "unnamed_character";
   private static int defaultTableSize = 14;
 
+  // Sets up all the listeners and the inventory pane
   public TimeLost() {
     addListeners();
     setupInventory();
   }
 
+  /* Congirues a table with the proper column #s and names, disallows moving the columns, and sets
+   * the default row size. Puts it in the GUI
+   */
   private void setupInventory() {
     inventoryTableModel = new DefaultTableModel();
     inventoryTableModel.addColumn("Name");
@@ -120,6 +126,10 @@ public class TimeLost {
     InventoryTable.setModel(inventoryTableModel);
   }
 
+  /*
+   * Creates the main frame, attaches this objects rootPanel to it, so that this class'
+   * functionality is accessible. Configures window settings, and sets visible.
+   */
   public static void main(String[] args) {
     mainFrame = new JFrame(defaultName);
     TimeLost tl = new TimeLost();
@@ -131,10 +141,12 @@ public class TimeLost {
     mainFrame.setVisible(true);
   }
 
+  // Adds the functionality to all of the interactables in the GUI
   private void addListeners() {
 
     // these listeners literally just see if something in the GUI has changed, to add the * to the
-    // frame title. If I know how to make this less abysmal i would
+    // frame title (indicating a change).
+    // TODO: make this less abysmal, and include the inventory pane
     ChangeListener changeListener = e -> mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
     ActionListener actionListener = e -> mainFrame.setTitle(appendAsterisks(mainFrame.getTitle()));
     DocumentListener docChangeListener = new DocumentListener() {
@@ -176,27 +188,29 @@ public class TimeLost {
     Essence3.addActionListener(actionListener);
     Essence4.addActionListener(actionListener);
 
-    // actual functional listeners
-    Attack.addActionListener(e -> openStatChooser());
-    Defend.addActionListener(e -> defend());
-    Counter.addActionListener(e -> counter());
-    Draw.addActionListener(e -> openDrawMenu());
-    New.addActionListener(e -> newChar());
-    Save.addActionListener(e -> {
+    // More notable listeners
+    Attack.addActionListener(e -> openStatChooser()); // Opens window where you choose attack stat
+    Defend.addActionListener(e -> defend());          // Rolls defense calculation
+    Counter.addActionListener(e -> counter());        // Rolls counter calculation
+    Draw.addActionListener(e -> openDrawMenu());      // opens draw window
+    New.addActionListener(e -> newChar());            // resets gui to default state -> new character state
+    Save.addActionListener(e -> {                     // Saves the current character:
       if (currentFile != null) {
-        save(currentFile);
+        save(currentFile);                            // If the character file already exists (loaded/saved before), auto save
       } else {
-        saveNew();
+        saveNew();                                    // Open file chooser gui to save a new character
       }
     });
     SaveAs.addActionListener(e -> {
-      saveNew();
+      saveNew();                                      // Open file chooser gui to save a new character
     });
-    loadButton.addActionListener(e -> load());
+    loadButton.addActionListener(e -> load());        // opens file chooser to load a character
 
+    // updates inventory row count
     AddRow.addActionListener(e -> inventoryTableModel.setRowCount(inventoryTableModel.getRowCount() + 1));
   }
 
+  // Literally just changes the name of the frame to indicate unsaved changes
   private String appendAsterisks(String s) {
     if (!s.endsWith("*")) {
       return s.concat("*");
@@ -204,6 +218,7 @@ public class TimeLost {
     return s;
   }
 
+  // Opens a new Draw menu window so the user can choose a max value for the RNG
   private void openDrawMenu() {
     draw = new JFrame("Choose Max Value");
     draw.setContentPane(new Draw(TimeLost.this).rootPanel);
@@ -214,6 +229,7 @@ public class TimeLost {
     draw.setVisible(true);
   }
 
+  // Opens the stat chooser window so the user can specify a stat for their attack
   private void openStatChooser() {
     statChooser = new JFrame("Choose Stat");
     statChooser.setContentPane(new StatChooser(TimeLost.this).rootPanel);
@@ -223,18 +239,25 @@ public class TimeLost {
     statChooser.setVisible(true);
   }
 
+  // This has to be a method of this class because the stat chooser window is a subwindow
+  // TODO: consider destroying the window and/or opening a pre-existing window in openStatChooser
   public void closeStatChooser() {
     statChooser.setVisible(false);
   }
 
+  // Counter an enemy attack by dealing a small amount of knockback damage to attacker
+  // Auto apply body , since that is the meta relevant stat
   private void counter() {
     returnOutcome(BodyGroup, Stat.BODY, TimeLostChar.SMALLDECK);
   }
 
+  // Mitigate damage taken from an enemy attack
+  // Apply mind, since that is meta relevant stat
   private void defend() {
     returnOutcome(MindGroup, Stat.MIND, TimeLostChar.SMALLDECK);
   }
 
+  // Attack, based on what stat is selected by the user
   public void attack(String s) {
     ButtonGroup group;
     Stat stat;
@@ -242,7 +265,7 @@ public class TimeLost {
     // Determine which stat we care about
     // (currently based on the selection made in StatChooser window)
     // am aware this is non-ideal hardcoding,
-    // but it would unnecessarily complicate something that is fairly invariable
+    // but it would unnecessarily complicate something that is fairly invariable to do otherwise
     switch (s) {
       case "Body":
         group = BodyGroup;
@@ -264,25 +287,26 @@ public class TimeLost {
     returnOutcome(group, stat, TimeLostChar.BIGDECK);
   }
 
+  // Tell the player the outcome of their role in the bottom text window
   private void returnOutcome(ButtonGroup group, Stat stat, int bigdeck) {
     BattleOutcome.setText("Stat: " + stat + "\n" + TimeLostChar
         .action((int) CharacterLVL.getValue(), getSelectedButton(group), bigdeck));
   }
 
+  // Save the character as a new character by opening the file chooser
   private void saveNew() {
-    // configure jfc
+    // configure jfc (j-file chooser)
     JFileChooser jfc = new JFileChooser();
     jfc.setFileFilter(new FileNameExtensionFilter("JSON Files", "json"));
     jfc.setCurrentDirectory(new File(Paths.get("").toAbsolutePath().toString()));
     File selectedFile;
-    if (currentFile != null) {
-      selectedFile = currentFile;
-    }
-    else {
-      selectedFile = new File(defaultName + ".json");
-    }
+
+    // Sets file to be saved, with a null check
+    selectedFile = Objects
+        .requireNonNullElseGet(currentFile, () -> new File(defaultName + ".json"));
     jfc.setSelectedFile(selectedFile);
 
+    // Save the file with the .json extension
     if (jfc.showSaveDialog(rootPanel) == JFileChooser.APPROVE_OPTION) {
       File file = jfc.getSelectedFile();
 
@@ -293,6 +317,7 @@ public class TimeLost {
     }
   }
 
+  // Save the given file by serializing to a json file using the GSON library
   private void save(File file) {
     try {
       Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -311,6 +336,7 @@ public class TimeLost {
     }
   }
 
+  // Load a character file from the file chooser
   private void load() {
     // configure jfc
     JFileChooser jfc = new JFileChooser();
@@ -327,7 +353,7 @@ public class TimeLost {
           stringBuilder.append(scanner.nextLine());
         }
 
-        // convert string into the class
+        // convert string into the class with GSON library
         Gson gson = new Gson();
         TimeLostChar loaded = gson.fromJson(stringBuilder.toString(), TimeLostChar.class);
         buildGUIFromCharacter(loaded);
@@ -341,6 +367,7 @@ public class TimeLost {
     }
   }
 
+  // Reset default values of GUI
   private void newChar() {
     CharacterName.setText("");
     CharacterLVL.setValue(0);
@@ -370,6 +397,7 @@ public class TimeLost {
     currentFile = null;
   }
 
+  // Build a character class from the values in the GUI
   private TimeLostChar buildCharacterFromGUI() {
     TimeLostChar output = new TimeLostChar();
 
@@ -394,6 +422,7 @@ public class TimeLost {
     return output;
   }
 
+  // Convert inventory table to an array, so it can be held in character class
   private TimeLostItem[] convertInventoryToItemArray() {
     ArrayList<TimeLostItem> output = new ArrayList<>();
 
@@ -429,6 +458,7 @@ public class TimeLost {
     return output.toArray(new TimeLostItem[0]);
   }
 
+  // Parse the spinner values as ints, or return 0.
   private int parseSpinner(JSpinner spinner) {
     try {
       return (int)spinner.getValue();
@@ -437,6 +467,7 @@ public class TimeLost {
     }
   }
 
+  // fill out GUI based on character class
   private void buildGUIFromCharacter(TimeLostChar character) {
     CharacterName.setText(character.getName());
     CharacterLVL.setValue(character.getLVL());
@@ -463,6 +494,7 @@ public class TimeLost {
     fillInventoryTable(character.getInventory());
   }
 
+  // Fill out inventory table based on values in array. Properties of TimeLostItem class correspond to columns
   private void fillInventoryTable(TimeLostItem[] input) {
     TimeLostItem[] inventory;
     if (input == null)
@@ -484,10 +516,12 @@ public class TimeLost {
     }
   }
 
+  // Set the correct radio button in the given group based on the index
   private void setStatRadioButton(ButtonGroup group, int index, JRadioButton[] buttons) {
     group.setSelected(buttons[index].getModel(), true);
   }
 
+  // Get the button currently selected in the given radio group
   private int getSelectedButton(ButtonGroup group) {
     int output = 0;
     Enumeration<AbstractButton> buttons = group.getElements();

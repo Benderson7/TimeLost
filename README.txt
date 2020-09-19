@@ -16,7 +16,6 @@ It is recommended that the .jar file for the game be kept in it's own dedicated 
 
 Future plans for the project include:
 Small stuff:
-- Actual documentation (haha, yeah my bad)
 - Optimization of the inventory serialization process
 - Make the save/load dialog box open in the last directory saved in/loaded from, for convenience.
 Big Stuff:

@@ -2,10 +2,11 @@ package Character;
 
 import java.util.Random;
 
+// Represents a character in TimeLost, containing all relevant stats, and the ability to do an action
 public class TimeLostChar {
 
-  public static int BIGDECK = 9;
-  public static int SMALLDECK = 4;
+  public static int BIGDECK = 9; // ceiling for actions with large draw pool/deck
+  public static int SMALLDECK = 4; // ceiling for actions with small draw pool/deck
 
   private String name;
   private int health;
@@ -19,65 +20,46 @@ public class TimeLostChar {
   private int essence;
   private TimeLostItem[] inventory;
 
+  // Getters and Setters - we love Java
   public String getName() { return name; }
-  public void setName(String text) {
-    name = text;
-  }
+  public void setName(String text) { name = text; }
 
-  public int getHealth() {
-    return health;
-  }
-  public void setHealth(int value) {
-    health = value;
-  }
+  public int getHealth() { return health; }
+  public void setHealth(int value) { health = value; }
 
-  public int getMaxHealth() {
-    return maxHealth;
-  }
-  public void setMaxHealth(int value) {
-    maxHealth = value;
-  }
+  public int getMaxHealth() { return maxHealth; }
+  public void setMaxHealth(int value) { maxHealth = value; }
 
-  public int getLVL() {
-    return LVL;
-  }
-  public void setLVL(int value) {
-    LVL = value;
-  }
+  public int getLVL() { return LVL; }
+  public void setLVL(int value) { LVL = value; }
 
   public int getFocus() { return focus; }
-  public void setFocus(int value) {
-    focus = value;
-  }
+  public void setFocus(int value) { focus = value; }
 
   public int getMaxFocus() { return maxFocus; }
-  public void setMaxFocus(int value) {
-    maxFocus = value;
-  }
+  public void setMaxFocus(int value) { maxFocus = value; }
 
   public int getBody() { return body; }
-  public void setBody(int selectedButton) {
-    body = selectedButton;
-  }
+  public void setBody(int selectedButton) { body = selectedButton; }
 
   public int getMind() {return mind; }
-  public void setMind(int selectedButton) {
-    mind = selectedButton;
-  }
+  public void setMind(int selectedButton) { mind = selectedButton; }
 
   public int getSoul() { return soul; }
-  public void setSoul(int selectedButton) {
-    soul = selectedButton;
-  }
+  public void setSoul(int selectedButton) { soul = selectedButton; }
 
   public int getEssence() {return essence; }
-  public void setEssence(int selectedButton) {
-    essence = selectedButton;
-  }
+  public void setEssence(int selectedButton) { essence = selectedButton; }
 
   public TimeLostItem[] getInventory() { return inventory; }
   public void setInventory(TimeLostItem[] inventory) { this.inventory = inventory; }
 
+  /* An action returns a value that represents the damage/damage mitigation output of the action
+   * - Boost represents the amount of times the character is able to add additional output to the value
+   * based on a 1/4 chance (same as the amount of stats)
+   * - xp simply adds to the total by its value
+   * - maxValue is the size of the original deck drawn from - boost always draws from small deck
+   */
   public static String action(int boostLimit, int xp, int maxValue) {
     // result of the first draw
     int initialResult = 0;
@@ -118,7 +100,8 @@ public class TimeLostChar {
         drawsLeft = true;
       }
     }
-    // TODO
+
+    // TODO: placeholder for once item integration is added to actions
     int itemsUsedSum = 0;
 
     // clean up the Boost String builder
@@ -132,6 +115,7 @@ public class TimeLostChar {
     // Returns result as a cleaned up string, of the format:
     // "Result: (Initial Value: x) + (Boosts: y) + (Stat XP: z) + (Items Used Bonus: w) = v"
     // where v = x + y + z + w
+    // TODO: consider representing actions with a class (ie TimeLostAction) so this isn't so messy.
     return "Result = (Initial Value: " + initialResult
         + ") + (Boosts: " + boostStringAcc
         + ") + (Stat XP: " + xp
